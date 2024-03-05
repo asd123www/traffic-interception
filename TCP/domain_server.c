@@ -5,7 +5,10 @@
 #include <string.h> 
 #include <sys/socket.h> 
 #include <sys/types.h> 
+#include <sys/un.h>
+
 #include <unistd.h> // read(), write(), close()
+#define MSG_SIZE 32 * 1024
 #define MAX 1024 * 64
 #define PORT 8080 
 
@@ -29,25 +32,24 @@ void func(int connfd)  {
 // Driver function 
 int main() {
     int sockfd, connfd, len; 
-    struct sockaddr_in servaddr, cli; 
+    // struct sockaddr_in servaddr, cli; 
+    struct sockaddr_un server_addr, cli;
    
     // socket create and verification 
-    sockfd = socket(AF_INET, SOCK_STREAM, 0); 
+    sockfd = socket(AF_UNIX, SOCK_STREAM, 0); 
     if (sockfd == -1) { 
         printf("socket creation failed...\n"); 
-        exit(0); 
+        exit(0);
     }
-    bzero(&servaddr, sizeof(servaddr)); 
-   
-    // assign IP, PORT 
-    servaddr.sin_family = AF_INET; 
-    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1"); 
-    servaddr.sin_port = htons(10000); 
-   
-    // Binding newly created socket to given IP and verification 
-    if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) { 
-        printf("socket bind failed...\n"); 
-        exit(0); 
+
+    /* Setup the address structure */
+    memset(&server_addr, 0, sizeof(struct sockaddr_in));
+    server_addr.sun_family = AF_UNIX;
+    strcpy(server_addr.sun_path, "asd123www_test_unix_socket");
+
+    if(bind(sockfd, (struct sockaddr *) &server_addr, sizeof(struct sockaddr_un)) != 0) {
+        printf("bind() failed\n");
+        return 1;
     }
    
     // Now server is ready to listen and verification 
@@ -55,8 +57,8 @@ int main() {
         printf("Listen failed...\n"); 
         exit(0); 
     }
+
     len = sizeof(cli);
-   
     // Accept the data packet from client and verification 
     connfd = accept(sockfd, (SA*)&cli, &len); 
     if (connfd < 0) { 

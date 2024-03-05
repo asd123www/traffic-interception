@@ -5,8 +5,9 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
+#include <sys/un.h>
 
-
+#define MSG_SIZE 32 * 1024
 #define WARMUP 100000
 #define TOTAL_ROUND 2000000
 
@@ -34,10 +35,10 @@ void queryStatistic(long a[]) {
 
 int main() {
     int sockfd;
-    struct sockaddr_in server_addr, client_addr;
+    struct sockaddr_un server_addr, client_addr;
 
     // Create a socket
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockfd == -1) {
         printf("socket creation failed...\n");
         exit(0);
@@ -45,9 +46,9 @@ int main() {
 
     // Specify the server address
     bzero(&server_addr, sizeof(server_addr));
-    server_addr.sin_family = AF_INET; // Address family
-    server_addr.sin_port = htons(10000); // Port number, converted to network byte order
-    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1"); // Server IP address
+    server_addr.sun_family = AF_UNIX;
+    strcpy(server_addr.sun_path, "asd123www_test_unix_socket");
+
 
     // Connect the socket to the server
     int ret = connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
@@ -60,10 +61,9 @@ int main() {
 
     struct timespec start, end;
 
-    uint32_t size = 32 * 1024;
     for (int i = 0; i < TOTAL_ROUND; ++i) {
         clock_gettime(CLOCK_MONOTONIC, &start);
-        uint32_t write_len = write(sockfd, buff, size);
+        uint32_t write_len = write(sockfd, buff, MSG_SIZE);
         // printf("Sent %d bytes to server.\n", write_len);
         uint32_t read_len = read(sockfd, buff, sizeof(buff));
         // printf("Received %d bytes from server.\n", read_len);

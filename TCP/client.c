@@ -6,7 +6,7 @@
 #include <time.h>
 #include <string.h>
 
-
+#define MSG_SIZE 32
 #define WARMUP 100000
 #define TOTAL_ROUND 2000000
 
@@ -60,13 +60,19 @@ int main() {
 
     struct timespec start, end;
 
-    uint32_t size = 32 * 1024;
     for (int i = 0; i < TOTAL_ROUND; ++i) {
         clock_gettime(CLOCK_MONOTONIC, &start);
-        uint32_t write_len = write(sockfd, buff, size);
-        // printf("Sent %d bytes to server.\n", write_len);
-        uint32_t read_len = read(sockfd, buff, sizeof(buff));
-        // printf("Received %d bytes from server.\n", read_len);
+        uint32_t write_len = write(sockfd, buff, MSG_SIZE);
+        if (write_len != MSG_SIZE) {
+            printf("Wrong: %d %d\n", write_len, MSG_SIZE);
+            fflush(stdout);
+        }
+        uint32_t read_len = read(sockfd, buff, MSG_SIZE);
+        if (read_len != MSG_SIZE) {
+            printf("Wrong: %d %d\n", read_len, MSG_SIZE);
+            fflush(stdout);
+        }
+
         clock_gettime(CLOCK_MONOTONIC, &end);
         if (i > WARMUP) {
             arr[++arr[0]] = end.tv_sec * 1000000000LL + end.tv_nsec - start.tv_sec * 1000000000LL - start.tv_nsec;

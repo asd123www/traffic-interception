@@ -6,6 +6,7 @@
 #include <sys/socket.h> 
 #include <sys/types.h> 
 #include <unistd.h> // read(), write(), close()
+#define MSG_SIZE 32
 #define MAX 1024 * 64
 #define PORT 8080 
 
@@ -18,11 +19,19 @@ void func(int connfd)  {
     int n; 
     // infinite loop for chat 
     for (;;) {
-        bzero(buff, MAX); 
         // read the message from client and copy it in buffer 
-        uint32_t read_len = read(connfd, buff, sizeof(buff)); 
+        uint32_t read_len = read(connfd, buff, MSG_SIZE);
+        if (read_len == 0) continue;
+        if (read_len != MSG_SIZE) {
+            printf("Wrong: %d %d\n", read_len, MSG_SIZE);
+            fflush(stdout);
+        }
         // and send that buffer to client 
-        write(connfd, buff, read_len); 
+        uint32_t write_len = write(connfd, buff, read_len);
+        if (write_len != MSG_SIZE) {
+            printf("Wrong: %d %d\n", write_len, MSG_SIZE);
+            fflush(stdout);
+        }
     }
 }
 
@@ -53,7 +62,7 @@ int main() {
     // Now server is ready to listen and verification 
     if ((listen(sockfd, 5)) != 0) { 
         printf("Listen failed...\n"); 
-        exit(0); 
+        exit(0);
     }
     len = sizeof(cli);
    

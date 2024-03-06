@@ -8,7 +8,7 @@
 #include <sys/un.h>
 
 #include <unistd.h> // read(), write(), close()
-#define MSG_SIZE 32 * 1024
+#define MSG_SIZE 8192
 #define MAX 1024 * 64
 #define PORT 8080 
 
@@ -21,11 +21,19 @@ void func(int connfd)  {
     int n; 
     // infinite loop for chat 
     for (;;) {
-        bzero(buff, MAX); 
         // read the message from client and copy it in buffer 
-        uint32_t read_len = read(connfd, buff, sizeof(buff)); 
+        uint32_t read_len = read(connfd, buff, MSG_SIZE);
+        if (read_len == 0) continue;
+        if (read_len != MSG_SIZE) {
+            printf("Wrong: %d %d\n", read_len, MSG_SIZE);
+            fflush(stdout);
+        }
         // and send that buffer to client 
-        write(connfd, buff, read_len); 
+        uint32_t write_len = write(connfd, buff, read_len);
+        if (write_len != MSG_SIZE) {
+            printf("Wrong: %d %d\n", write_len, MSG_SIZE);
+            fflush(stdout);
+        }
     }
 }
 
